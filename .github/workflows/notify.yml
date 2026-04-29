@@ -1,0 +1,20 @@
+name: Push notify
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub may delay scheduled runs a few minutes during high load.
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # allow manual trigger from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit notify endpoint
+        run: |
+          curl -fsS -X POST "$NOTIFY_URL" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json"
+        env:
+          NOTIFY_URL: ${{ secrets.NOTIFY_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
