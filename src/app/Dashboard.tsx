@@ -30,6 +30,7 @@ export default function Dashboard({ habits, today, userId, longestStreak, displa
   const [, startTransition] = useTransition()
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [reorderMode, setReorderMode] = useState(false)
+  const [reordering, setReordering] = useState(false)
 
   function setPendingFor(id: string, on: boolean) {
     setPending(prev => {
@@ -65,22 +66,20 @@ export default function Dashboard({ habits, today, userId, longestStreak, displa
 
   async function moveHabit(index: number, dir: -1 | 1) {
     const target = index + dir
-    if (target < 0 || target >= sorted.length) return
-    const a = sorted[index].habit
-    const b = sorted[target].habit
-    await Promise.all([
-      supabase.from('habits').update({ sort_order: b.sort_order }).eq('id', a.id),
-      supabase.from('habits').update({ sort_order: a.sort_order }).eq('id', b.id),
-    ])
-    if (a.sort_order === b.sort_order) {
-      const fresh = [...habits].sort((x, y) => x.habit.sort_order - y.habit.sort_order)
-      await Promise.all(
-        fresh.map((h, i) =>
-          supabase.from('habits').update({ sort_order: i }).eq('id', h.habit.id),
-        ),
-      )
-    }
+    if (target < 0 || target >= sorted.length || reordering) return
+    setReordering(true)
+    // Build the new desired order locally, then renumber every habit.
+    // This is robust whether or not the existing sort_order values are unique.
+    const reordered = [...sorted]
+    const [moved] = reordered.splice(index, 1)
+    reordered.splice(target, 0, moved)
+    await Promise.all(
+      reordered.map((h, i) =>
+        supabase.from('habits').update({ sort_order: i }).eq('id', h.habit.id),
+      ),
+    )
     startTransition(() => router.refresh())
+    setReordering(false)
   }
 
   return (
@@ -198,7 +197,7 @@ export default function Dashboard({ habits, today, userId, longestStreak, displa
                     <button
                       type="button"
                       onClick={() => moveHabit(idx, -1)}
-                      disabled={idx === 0}
+                      disabled={idx === 0 || reordering}
                       className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 disabled:opacity-30"
                       aria-label="Move up"
                     >
@@ -207,7 +206,7 @@ export default function Dashboard({ habits, today, userId, longestStreak, displa
                     <button
                       type="button"
                       onClick={() => moveHabit(idx, 1)}
-                      disabled={idx === sorted.length - 1}
+                      disabled={idx === sorted.length - 1 || reordering}
                       className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 disabled:opacity-30"
                       aria-label="Move down"
                     >

@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 const DISMISS_KEY = 'bloom_install_hint_dismissed'
 
 type Props = { open: boolean; onClose: () => void }
 
 function detectPlatform() {
-  if (typeof window === 'undefined') return { isIOS: false, isStandalone: false }
+  if (typeof window === 'undefined') return { isIOS: false, isStandalone: true }
   const ua = window.navigator.userAgent
   const isIOS = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
   const isStandalone =
@@ -17,11 +17,8 @@ function detectPlatform() {
 }
 
 export default function InstallHint({ open, onClose }: Props) {
-  const [{ isIOS, isStandalone }, setPlatform] = useState({ isIOS: false, isStandalone: true })
-
-  useEffect(() => {
-    setPlatform(detectPlatform())
-  }, [])
+  // Lazy-init from window once on mount; SSR returns isStandalone=true so the modal stays hidden during hydration.
+  const [{ isIOS, isStandalone }] = useState(detectPlatform)
 
   function handleDismiss() {
     try {

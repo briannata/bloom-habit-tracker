@@ -1,10 +1,11 @@
-function urlBase64ToUint8Array(base64: string): Uint8Array {
+function urlBase64ToArrayBuffer(base64: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
   const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
   const raw = atob(b64)
-  const arr = new Uint8Array(raw.length)
-  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i)
-  return arr
+  const buf = new ArrayBuffer(raw.length)
+  const view = new Uint8Array(buf)
+  for (let i = 0; i < raw.length; i++) view[i] = raw.charCodeAt(i)
+  return buf
 }
 
 export function isPushSupported(): boolean {
@@ -23,6 +24,18 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
   return await reg.pushManager.getSubscription()
 }
 
+async function postSubscription(sub: PushSubscription): Promise<void> {
+  const res = await fetch('/api/push/subscribe', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(sub.toJSON()),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'unknown' }))
+    throw new Error(data.error || `Failed to save subscription (${res.status})`)
+  }
+}
+
 export async function subscribeToPush(): Promise<PushSubscription> {
   if (!isPushSupported()) throw new Error('Push not supported on this browser')
   const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
@@ -36,23 +49,19 @@ export async function subscribeToPush(): Promise<PushSubscription> {
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') throw new Error('Notification permission denied')
 
+  // Reuse the browser's existing subscription if there is one — but ALWAYS re-post it
+  // so the server row is in sync (e.g. after the notify cron pruned a 410-Gone endpoint).
   const existing = await reg.pushManager.getSubscription()
-  if (existing) return existing
+  if (existing) {
+    await postSubscription(existing)
+    return existing
+  }
 
-  const keyArr = urlBase64ToUint8Array(vapidKey)
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: keyArr.buffer.slice(
-      keyArr.byteOffset,
-      keyArr.byteOffset + keyArr.byteLength,
-    ) as ArrayBuffer,
+    applicationServerKey: urlBase64ToArrayBuffer(vapidKey),
   })
-
-  await fetch('/api/push/subscribe', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(sub.toJSON()),
-  })
+  await postSubscription(sub)
   return sub
 }
 

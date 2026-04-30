@@ -61,6 +61,9 @@ export default function ProfileForm({ userId, email, displayName, timezone, avat
   const [pushBusy, setPushBusy] = useState(false)
   const [pushError, setPushError] = useState('')
   const [showInstallHint, setShowInstallHint] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!isPushSupported()) return
@@ -97,9 +100,6 @@ export default function ProfileForm({ userId, email, displayName, timezone, avat
     await supabase.from('habits').update({ archived_at: null }).eq('id', habitId)
     router.refresh()
   }
-  const [saving, setSaving] = useState(false)
-  const [savedAt, setSavedAt] = useState<number | null>(null)
-  const [error, setError] = useState('')
 
   const detected = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : null
   const tzOptions = Array.from(new Set([detected, tz, ...TIMEZONES].filter(Boolean) as string[]))
@@ -108,13 +108,14 @@ export default function ProfileForm({ userId, email, displayName, timezone, avat
     e.preventDefault()
     setSaving(true)
     setError('')
+    setSaved(false)
     const { error: err } = await supabase
       .from('profiles')
       .upsert({ id: userId, display_name: name.trim() || null, timezone: tz, avatar: pickedAvatar })
     if (err) {
       setError(err.message)
     } else {
-      setSavedAt(Date.now())
+      setSaved(true)
     }
     setSaving(false)
     router.refresh()
@@ -271,7 +272,7 @@ export default function ProfileForm({ userId, email, displayName, timezone, avat
         </div>
 
         {error && <p className="text-red-500 text-sm px-2">{error}</p>}
-        {savedAt && !error && <p className="text-green-700 text-sm px-2">Saved ✓</p>}
+        {saved && !error && <p className="text-green-700 text-sm px-2">Saved ✓</p>}
 
         <button
           type="submit"

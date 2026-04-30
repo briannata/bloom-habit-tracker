@@ -19,7 +19,8 @@ export default async function HomePage() {
 
   const tz = profile?.timezone || 'UTC'
   const today = todayInTz(tz)
-  const since = addDays(today, -60)
+  // 365 days back so calcStreak can find streaks longer than ~2 months without truncation.
+  const since = addDays(today, -365)
 
   const { data: habits } = await supabase
     .from('habits')
