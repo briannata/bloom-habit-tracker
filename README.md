@@ -2,49 +2,74 @@
 
 # 🌱 Bloom
 
-**A mobile-first habit tracker PWA with a plant that grows alongside your streak.**
+### Grow your habits, one day at a time
 
-[Live demo](https://bloom-habit-tracker-fc3n.vercel.app/) · [@briannata](https://github.com/briannata)
+A mobile-first habit tracker with a plant that grows alongside your streak.
+
+[**Live demo**](https://bloom-habit-tracker-fc3n.vercel.app/) · [@briannata](https://github.com/briannata)
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-000?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=fff)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=fff)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase&logoColor=fff)](https://supabase.com/)
-[![Vercel](https://img.shields.io/badge/Vercel-Deployed-000?logo=vercel)](https://vercel.com/)
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000?logo=vercel)](https://vercel.com/)
 
 </div>
 
 ---
 
-## Highlights
+## ✨ What it does
 
-- **Full-stack PWA** — installable on iOS & Android, works offline-ready, complete auth flow
-- **Web Push notifications** — daily + interval reminders, timezone-aware, delivered through a service worker, scheduled via GitHub Actions cron
-- **Postgres with Row-Level Security** — every query scoped to the signed-in user; no API surface exposes other users' data
-- **OAuth + email auth** via Supabase, including a custom `/auth/callback` that handles cookie-based session exchange
-- **Custom growing-plant SVG** with 5 streak stages, **GitHub-style year heatmap**, and a tap-to-edit calendar grid
-- **Mobile-first responsive UI** that adapts cleanly from phone to desktop without a separate codebase
+Track daily habits like a native app — installable on your phone, with smart reminders and a growing plant that reflects your progress.
 
-## Stack
+```
+🪴  →  🌱  →  🌿  →  🌸  →  🌳
+ 0      1-3    4-7    week+   month+
+```
 
-Next.js 16 (App Router) · TypeScript · Tailwind · Supabase (Postgres + Auth) · Web Push API · Service Worker · Vercel · GitHub Actions
+The longer your streak, the more your plant blooms.
 
-## Engineering decisions worth a look
+---
 
-- [`src/proxy.ts`](src/proxy.ts) — auth-gate edge logic on every request (Next 16 replacement for middleware)
-- [`src/app/api/push/notify/route.ts`](src/app/api/push/notify/route.ts) — cron-protected endpoint that computes each user's local time, matches habits within a 15-minute window, and dispatches pushes
-- [`src/app/auth/callback/route.ts`](src/app/auth/callback/route.ts) — OAuth code exchange that attaches session cookies directly to the redirect response (avoids a known Supabase SSR pitfall)
-- [`src/components/Plant.tsx`](src/components/Plant.tsx) — hand-rolled SVG that morphs between stages based on the longest active streak
+## 🌟 Features
 
-## Features at a glance
+**Daily dashboard**
+Three habit types — boolean, numeric, and duration — each with its own input UI. Logged habits auto-sort to the bottom; a 7-day strip on every card surfaces the past week without leaving the screen. The growing-plant SVG on the header reflects your longest active streak across all habits.
 
-📅 Daily dashboard with one-tap logging, +/− steppers, tap-to-edit values, completed-sink-to-bottom, 7-day strip per habit
-📊 Calendar month view + year heatmap, per-habit current/best/total stats, backfill any past day
-⏰ Daily reminders + hourly-interval reminders within a time window
-👤 Profile with avatar picker, timezone auto-detect, push notification toggle
-🗂️ Reorderable, archivable habits (soft delete preserves history)
-🔐 Google OAuth + email/password with email confirmation
-📱 PWA installable on iOS/Android, in-app "Add to Home Screen" prompt for iOS push support
+**Calendar history**
+Tap-to-log calendar month with intensity scaled to completion ratio, plus a full-year GitHub-style heatmap. Per-habit current streak, best-ever streak, and total completions on tap. Backfill any past day to keep streaks honest.
+
+**Smart reminders**
+Daily reminder times *and* hourly-interval reminders within a window (e.g. "every 2 hours between 9am and 9pm"). Delivered as Web Push notifications through a service worker; the dispatcher computes each user's local time in their saved timezone before firing.
+
+**Auth & access control**
+Email/password and Google OAuth via Supabase. Every table uses Postgres Row-Level Security — every query is server-enforced to be scoped to the signed-in user.
+
+**PWA**
+Installable on iOS and Android with a maskable icon, splash screen, and theme color. Standalone display mode unlocks Web Push on iOS 16.4+. The app shows context-aware "Add to Home Screen" instructions when reminders are first set.
+
+**Habit management**
+Custom emoji + accent color per habit. Reorder with up/down controls (renumbers `sort_order` in a single batched write). Soft archive preserves history; permanent delete is a separate, opt-in action.
+
+---
+
+## 🛠️ Built with
+
+| Layer | |
+|---|---|
+| **Framework** | Next.js 16 (App Router) + React 19 |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS 4 |
+| **Database & Auth** | Supabase (Postgres with RLS) |
+| **Notifications** | Web Push API + service worker |
+| **Scheduling** | GitHub Actions cron |
+| **Hosting** | Vercel |
+
+---
+
+## 🌱 Why "Bloom"?
+
+Habits are like plants — small, daily, easy to forget, but transformative over months. The dashboard reflects your longest active streak with a plant that grows from bare soil to a full bloom. Miss a day and the next streak starts again. The plant is patient.
 
 ---
 
